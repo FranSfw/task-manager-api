@@ -81,6 +81,31 @@ app.delete('/tasks/:id', async (req, res) => {
   }
 });
 
+// PUT – Actualizar el estado de una tarea 
+app.put('/tasks/:id', async (req, res) => {
+  const idParam = parseInt(req.params.id);
+  const { completed } = req.body;
+
+  if (completed === undefined) {
+    return res.status(400).json({ error: 'El campo completed es obligatorio' });
+  }
+
+  try {
+    const result = await pool.query(
+      'UPDATE tasks SET completed = $1 WHERE id = $2 RETURNING *',
+      [completed, idParam]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Tarea no encontrada' });
+    }
+
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al actualizar la tarea' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Task Manager API corriendo en el puerto ${PORT}`);
 });
