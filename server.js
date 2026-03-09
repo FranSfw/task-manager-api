@@ -36,7 +36,7 @@ initDB();
 // GET – Obtener todas las tareas
 app.get('/tasks', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM tasks ORDER BY id ASC');
+    const result = await pool.query('SELECT * FROM tasks ORDER BY completed ASC, id ASC');
     res.status(200).json(result.rows);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener las tareas' });
