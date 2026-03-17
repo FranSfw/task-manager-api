@@ -17,6 +17,8 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+app.use(express.static('public'));
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -55,7 +57,7 @@ app.post('/register', async (req, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
+      sameSite: 'lax',
       maxAge: 2 * 60 * 60 * 1000
     });
 
@@ -81,7 +83,7 @@ app.post('/login', async (req, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
+      sameSite: 'lax',
       maxAge: 2 * 60 * 60 * 1000
     });
 
@@ -95,7 +97,7 @@ app.post('/logout', (req, res) => {
   res.clearCookie('token', { 
       httpOnly: true, 
       secure: process.env.NODE_ENV === 'production', 
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' 
+      sameSite: 'lax'
   });
   res.json({ message: 'Sesión cerrada' });
 });
