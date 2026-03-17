@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 
 // Configuraciones
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000', 
+  origin: true, 
   credentials: true 
 }));
 app.use(express.json());
