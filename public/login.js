@@ -20,7 +20,6 @@ async function handleAuth(endpoint) {
         return;
     }
 
-    // Desactivar botones para evitar doble clic
     loginBtn.disabled = true;
     registerBtn.disabled = true;
 
@@ -28,14 +27,13 @@ async function handleAuth(endpoint) {
         const response = await fetch(`${API_URL}${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include', // VITAL: Permite que el servidor envíe la cookie
+            credentials: 'include', 
             body: JSON.stringify({ username, password })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            // ¡Éxito! Redirigimos a la pantalla de tareas
             window.location.href = 'index.html';
         } else {
             showError(data.error || 'Ocurrió un error');
