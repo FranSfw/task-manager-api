@@ -6,6 +6,10 @@ const addBtn = document.getElementById('addBtn');
 const taskList = document.getElementById('taskList');
 const emptyMsg = document.getElementById('emptyMsg');
 const logoutBtn = document.getElementById('logoutBtn');
+const navTasksBtn = document.getElementById('navTasksBtn');
+const navMessagesBtn = document.getElementById('navMessagesBtn');
+const tasksSection = document.getElementById('tasksSection');
+const messagesSection = document.getElementById('messagesSection');
 
 // JWT
 function checkAuthError(response) {
@@ -145,6 +149,30 @@ if(taskInput) taskInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') addTask();
 });
 if(logoutBtn) logoutBtn.addEventListener('click', logout);
+
+navTasksBtn.addEventListener('click', () => {
+    // Mostrar tareas, ocultar mensajes
+    tasksSection.classList.remove('hidden');
+    messagesSection.classList.add('hidden');
+    
+    // Cambiar estilos de los botones (activo/inactivo)
+    navTasksBtn.classList.add('bg-gray-200', 'text-gray-900');
+    navTasksBtn.classList.remove('text-gray-600', 'hover:bg-gray-200');
+    navMessagesBtn.classList.remove('bg-gray-200', 'text-gray-900');
+    navMessagesBtn.classList.add('text-gray-600', 'hover:bg-gray-200');
+});
+
+navMessagesBtn.addEventListener('click', () => {
+    // Mostrar mensajes, ocultar tareas
+    messagesSection.classList.remove('hidden');
+    tasksSection.classList.add('hidden');
+    
+    // Cambiar estilos de los botones (activo/inactivo)
+    navMessagesBtn.classList.add('bg-gray-200', 'text-gray-900');
+    navMessagesBtn.classList.remove('text-gray-600', 'hover:bg-gray-200');
+    navTasksBtn.classList.remove('bg-gray-200', 'text-gray-900');
+    navTasksBtn.classList.add('text-gray-600', 'hover:bg-gray-200');    
+});
 
 // Iniciar aplicación
 fetchTasks();
