@@ -126,6 +126,19 @@ async function toggleTask(id, currentStatus) {
     }
 }
 
+// Cargar usuario logueado
+async function loadCurrentUser() {
+    try {
+        const response = await fetch(`${API_URL}/me`, { credentials: 'include' });
+        if (checkAuthError(response)) return;
+        const user = await response.json();
+        const userDisplay = document.getElementById('currentUserDisplay');
+        if (userDisplay) userDisplay.textContent = `@${user.username}`;
+    } catch (error) {
+        console.error('Error al obtener usuario:', error);
+    }
+}
+
 // Event Listeners
 if(addBtn) addBtn.addEventListener('click', addTask);
 if(taskInput) taskInput.addEventListener('keypress', (e) => {
@@ -135,3 +148,4 @@ if(logoutBtn) logoutBtn.addEventListener('click', logout);
 
 // Iniciar aplicación
 fetchTasks();
+loadCurrentUser();

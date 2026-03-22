@@ -109,6 +109,11 @@ app.post('/logout', (req, res) => {
   res.json({ message: 'Sesión cerrada' });
 });
 
+// 4. GET /me - Obtener usuario logueado
+app.get('/me', authenticateToken, (req, res) => {
+  res.json({ id: req.user.id, username: req.user.username });
+});
+
 // ENDPOINTS DE TAREAS
 
 // 1. GET /tasks
