@@ -8,23 +8,20 @@ const cookieParser = require('cookie-parser');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Middlewares
+  
 app.use(cors({
   origin: 'https://fransfw.github.io', 
   credentials: true 
 }));
 app.use(express.json());
 app.use(cookieParser());
-
-app.use(express.static('public'));
+app.use(express.static('public')); 
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-// Middleware para verificar el JWT en la cookie
 const authenticateToken = (req, res, next) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).json({ error: 'Acceso denegado' });
@@ -38,124 +35,169 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
-// Endpoints de autenticación
+// TABLAS 
+const initDB = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL
+      );
+    `);
+    
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        completed BOOLEAN DEFAULT false
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS comments (
+        id SERIAL PRIMARY KEY,
+        sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        receiver_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        message TEXT NOT NULL,
+        status VARCHAR(20) DEFAULT 'pending', -- 'pending' para solicitudes, 'accepted' para chats activos
+        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('Tablas verificadas en la base de datos.');
+  } catch (error) {
+    console.error('Error DB:', error);
+  }
+};
+initDB();
+
+// ENDPOINTS DE AUTENTICACIÓN
+
+// 1. POST /register
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
   try {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    
-    const result = await pool.query(
-      'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username',
-      [username, hashedPassword]
-    );
-    
+    const result = await pool.query('INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username', [username, hashedPassword]);
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '2h' });
-    
-    const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
-      maxAge: 2 * 60 * 60 * 1000
-    });
-
+    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 2 * 60 * 60 * 1000 });
     res.status(201).json(user);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al registrar (quizá el usuario ya existe)' });
-  }
+  } catch (error) { res.status(500).json({ error: 'Error al registrar' }); }
 });
 
+// 2. POST /login
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   try {
     const userResult = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
     if (userResult.rowCount === 0) return res.status(400).json({ error: 'Usuario incorrecto' });
-    
     const user = userResult.rows[0];
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(400).json({ error: 'Contraseña incorrecta' });
-
     const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '2h' });
-    const isProduction = process.env.NODE_ENV === 'production';
-    
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
-      maxAge: 2 * 60 * 60 * 1000
-    });
-
-    res.json({ message: 'Login exitoso' });
-  } catch (error) {
-    res.status(500).json({ error: 'Error en el servidor' });
-  }
+    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 2 * 60 * 60 * 1000 });
+    res.json({ message: 'Login exitoso', user: { id: user.id, username: user.username }});
+  } catch (error) { res.status(500).json({ error: 'Error servidor' }); }
 });
 
+// 3. POST /logout
 app.post('/logout', (req, res) => {
-  res.clearCookie('token', { 
-      httpOnly: true, 
-      secure: process.env.NODE_ENV === 'production', 
-      sameSite: 'lax'
-  });
+  res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
   res.json({ message: 'Sesión cerrada' });
 });
 
-// Endpoints
+// ENDPOINTS DE TAREAS
 
-// Get
+// 1. GET /tasks
 app.get('/tasks', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM tasks WHERE user_id = $1 ORDER BY completed ASC, id ASC', [req.user.id]);
-    res.status(200).json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener las tareas' });
-  }
+  try { const result = await pool.query('SELECT * FROM tasks WHERE user_id = $1 ORDER BY completed ASC, id ASC', [req.user.id]); res.status(200).json(result.rows); } 
+  catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-// Post
+// 2. POST /tasks
 app.post('/tasks', authenticateToken, async (req, res) => {
   const { title, completed } = req.body;
-  if (!title) return res.status(400).json({ error: 'Título obligatorio' });
-  
-  try {
-    const result = await pool.query(
-      'INSERT INTO tasks (title, completed, user_id) VALUES ($1, $2, $3) RETURNING *',
-      [title, completed || false, req.user.id]
-    );
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al crear la tarea' });
-  }
+  try { const result = await pool.query('INSERT INTO tasks (title, completed, user_id) VALUES ($1, $2, $3) RETURNING *', [title, completed || false, req.user.id]); res.status(201).json(result.rows[0]); } 
+  catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-// Delete
+// 3. DELETE /tasks/:id
 app.delete('/tasks/:id', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query('DELETE FROM tasks WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
-    if (result.rowCount === 0) return res.status(404).json({ error: 'No autorizada' });
-    res.status(204).send();
-  } catch (error) {
-    res.status(500).json({ error: 'Error al eliminar' });
-  }
+  try { const result = await pool.query('DELETE FROM tasks WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]); if (result.rowCount === 0) return res.status(404).json({ error: 'No autorizada' }); res.status(204).send(); } 
+  catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-// Put
+// 4. PUT /tasks/:id
 app.put('/tasks/:id', authenticateToken, async (req, res) => {
   const { completed } = req.body;
-  if (completed === undefined) return res.status(400).json({ error: 'Falta campo completed' });
+  try { const result = await pool.query('UPDATE tasks SET completed = $1 WHERE id = $2 AND user_id = $3 RETURNING *', [completed, req.params.id, req.user.id]); if (result.rowCount === 0) return res.status(404).json({ error: 'No autorizada' }); res.status(200).json(result.rows[0]); } 
+  catch (error) { res.status(500).json({ error: 'Error' }); }
+});
 
-  try {
-    const result = await pool.query(
-      'UPDATE tasks SET completed = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
-      [completed, req.params.id, req.user.id]
-    );
-    if (result.rowCount === 0) return res.status(404).json({ error: 'No autorizada' });
-    res.status(200).json(result.rows[0]);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al actualizar' });
-  }
+// ENDPOINTS DEL CHATS
+
+// 1. GET /users
+app.get('/users', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, username FROM users WHERE id != $1', [req.user.id]);
+        res.status(200).json(result.rows);
+    } catch (error) { res.status(500).json({ error: 'Error al cargar usuarios' }); }
+});
+
+// 2. GET /comments 
+app.get('/comments', authenticateToken, async (req, res) => {
+    try {
+        const query = `
+            SELECT c.id, u.username, c.message, c.date, c.sender_id, c.receiver_id, c.status
+            FROM comments c
+            JOIN users u ON c.sender_id = u.id
+            WHERE c.sender_id = $1 OR c.receiver_id = $1
+            ORDER BY c.date ASC;
+        `;
+        const result = await pool.query(query, [req.user.id]);
+        res.status(200).json(result.rows);
+    } catch (error) { res.status(500).json({ error: 'Error al obtener mensajes' }); }
+});
+
+// 3. POST /comments 
+app.post('/comments', authenticateToken, async (req, res) => {
+    const { receiver_id, message, date } = req.body; // La rúbrica pide mandar date desde JS
+    
+    if (!message || message.length < 5) return res.status(400).json({ error: 'Mensaje muy corto' });
+    if (!receiver_id) return res.status(400).json({ error: 'Falta destinatario' });
+
+    try {
+        const query = 'INSERT INTO comments (sender_id, receiver_id, message, date) VALUES ($1, $2, $3, $4) RETURNING *';
+        const result = await pool.query(query, [req.user.id, receiver_id, message, date]);
+        res.status(201).json(result.rows[0]);
+    } catch (error) { res.status(500).json({ error: 'Error al enviar mensaje' }); }
+});
+
+// 4. DELETE /comments/:id 
+app.delete('/comments/:id', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM comments WHERE id = $1 AND (sender_id = $2 OR receiver_id = $2)', 
+            [req.params.id, req.user.id]
+        );
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Mensaje no encontrado o no autorizado' });
+        res.status(204).send();
+    } catch (error) { res.status(500).json({ error: 'Error al eliminar' }); }
+});
+
+// 5. PUT /comments/:id/accept 
+app.put('/comments/:id/accept', authenticateToken, async (req, res) => {
+    try {
+        // Cambia el status a 'accepted' solo si tú eres el receptor
+        const result = await pool.query(
+            "UPDATE comments SET status = 'accepted' WHERE id = $1 AND receiver_id = $2 RETURNING *", 
+            [req.params.id, req.user.id]
+        );
+        res.status(200).json(result.rows[0]);
+    } catch (error) { res.status(500).json({ error: 'Error al aceptar solicitud' }); }
 });
 
 app.listen(PORT, () => console.log(`API corriendo en puerto ${PORT}`));
