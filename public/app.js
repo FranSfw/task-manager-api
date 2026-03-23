@@ -185,30 +185,49 @@ navMessagesBtn.addEventListener('click', () => {
 });
 
 // Cargar lista de usuarios
+let allComments = [];
+const searchDropdown = document.getElementById('searchDropdown');
+
 async function loadUsersForChat() {
     try {
         allUsers = await api.getUsers();
-        renderUsersList(allUsers);
+        allComments = await api.getComments();
+        renderActiveConversations();
     } catch (error) {
         console.error("Error cargando usuarios:", error);
     }
 }
 
-// Lista de Usuarios
-function renderUsersList(usersToRender) {
+// Lista principal: solo usuarios con al menos 1 mensaje
+function renderActiveConversations() {
     usersList.innerHTML = '';
 
-    if (usersToRender.length === 0) {
-        usersList.innerHTML = `<p class="text-xs text-center text-gray-400 mt-4">No se encontraron usuarios.</p>`;
+    // Obtener IDs de usuarios con los que hay mensajes
+    const contactIds = new Set();
+    allComments.forEach(m => {
+        if (m.sender_id === currentUserId) contactIds.add(m.receiver_id);
+        if (m.receiver_id === currentUserId) contactIds.add(m.sender_id);
+    });
+
+    const activeUsers = allUsers.filter(u => contactIds.has(u.id));
+
+    if (activeUsers.length === 0) {
+        usersList.innerHTML = `<p class="text-xs text-center text-gray-400 mt-4">No hay conversaciones aún. Usa el buscador para iniciar una.</p>`;
         return;
     }
 
-    usersToRender.forEach(user => {
+    activeUsers.forEach(user => {
         const li = document.createElement('li');
-        li.className = `flex items-center gap-3 p-3 rounded-md cursor-pointer transition-colors ${currentSelectedUser?.id === user.id ? 'bg-gray-100' : 'hover:bg-gray-50'
-            }`;
+        li.className = `flex items-center gap-3 p-3 rounded-md cursor-pointer transition-colors ${currentSelectedUser?.id === user.id ? 'bg-gray-100' : 'hover:bg-gray-50'}`;
 
         const initial = user.username.charAt(0).toUpperCase();
+
+        // Obtener último mensaje de la conversación
+        const lastMsg = [...allComments].reverse().find(m =>
+            (m.sender_id === currentUserId && m.receiver_id === user.id) ||
+            (m.sender_id === user.id && m.receiver_id === currentUserId)
+        );
+        const preview = lastMsg ? lastMsg.message.substring(0, 30) + (lastMsg.message.length > 30 ? '...' : '') : '';
 
         li.innerHTML = `
             <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold flex-shrink-0">
@@ -216,27 +235,70 @@ function renderUsersList(usersToRender) {
             </div>
             <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-900 truncate">@${user.username}</p>
-                <p class="text-xs text-gray-500 truncate">Haz clic para chatear</p>
+                <p class="text-xs text-gray-500 truncate">${preview}</p>
             </div>
         `;
 
-        li.addEventListener('click', () => {
-            openChatWith(user);
-        });
-
+        li.addEventListener('click', () => openChatWith(user));
         usersList.appendChild(li);
     });
 }
 
-// Buscador
-userSearchInput.addEventListener('input', (e) => {
-    const searchTerm = e.target.value.toLowerCase().trim();
+// Dropdown del buscador: muestra TODOS los usuarios filtrados
+function renderSearchDropdown(searchTerm) {
+    searchDropdown.innerHTML = '';
 
-    const filteredUsers = allUsers.filter(user =>
-        user.username.toLowerCase().includes(searchTerm)
+    if (!searchTerm) {
+        searchDropdown.classList.add('hidden');
+        return;
+    }
+
+    const filtered = allUsers.filter(u =>
+        u.username.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    renderUsersList(filteredUsers);
+    if (filtered.length === 0) {
+        searchDropdown.innerHTML = `<li class="px-3 py-2 text-xs text-gray-400 text-center">Sin resultados</li>`;
+        searchDropdown.classList.remove('hidden');
+        return;
+    }
+
+    filtered.forEach(user => {
+        const li = document.createElement('li');
+        li.className = 'flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors text-sm';
+
+        const initial = user.username.charAt(0).toUpperCase();
+        li.innerHTML = `
+            <div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs flex-shrink-0">${initial}</div>
+            <span class="text-gray-900 truncate">@${user.username}</span>
+        `;
+
+        li.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // Evita que el blur cierre el dropdown antes del click
+            openChatWith(user);
+            userSearchInput.value = '';
+            searchDropdown.classList.add('hidden');
+        });
+
+        searchDropdown.appendChild(li);
+    });
+
+    searchDropdown.classList.remove('hidden');
+}
+
+// Eventos del buscador
+userSearchInput.addEventListener('input', (e) => {
+    renderSearchDropdown(e.target.value.trim());
+});
+
+userSearchInput.addEventListener('focus', () => {
+    if (userSearchInput.value.trim()) {
+        renderSearchDropdown(userSearchInput.value.trim());
+    }
+});
+
+userSearchInput.addEventListener('blur', () => {
+    searchDropdown.classList.add('hidden');
 });
 
 function timeAgo(dateString) {
@@ -253,7 +315,7 @@ function timeAgo(dateString) {
 // Chat
 function openChatWith(user) {
     currentSelectedUser = user;
-    renderUsersList(allUsers);
+    renderActiveConversations();
 
     // Cambiamos la vista derecha
     document.getElementById('chatEmptyState').classList.add('hidden');
@@ -269,7 +331,7 @@ async function loadMessages() {
     chatWall.innerHTML = `<p class="text-center text-gray-400 text-sm mt-10">Cargando...</p>`;
     
     try {
-        const allComments = await api.getComments();
+        allComments = await api.getComments();
         
         // Filtramos solo los mensajes entre tú y el usuario seleccionado
         const chatHistory = allComments.filter(m => 
@@ -278,6 +340,7 @@ async function loadMessages() {
         );
         
         renderChatWall(chatHistory);
+        renderActiveConversations(); // Actualizar la lista lateral
     } catch (error) {
         chatWall.innerHTML = `<p class="text-center text-red-500 text-sm mt-10">Error de conexión.</p>`;
     }
