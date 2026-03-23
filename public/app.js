@@ -10,6 +10,11 @@ const navTasksBtn = document.getElementById('navTasksBtn');
 const navMessagesBtn = document.getElementById('navMessagesBtn');
 const tasksSection = document.getElementById('tasksSection');
 const messagesSection = document.getElementById('messagesSection');
+const userSearchInput = document.getElementById('userSearchInput');
+const usersList = document.getElementById('usersList');
+
+let allUsers = [];
+let currentSelectedUser = null;
 
 // JWT
 function checkAuthError(response) {
@@ -33,10 +38,10 @@ async function logout() {
 async function fetchTasks() {
     try {
         const response = await fetch(`${API_URL}/tasks`, { credentials: 'include' });
-        
+
         if (checkAuthError(response)) return;
 
-        if(appContainer) appContainer.classList.remove('hidden');
+        if (appContainer) appContainer.classList.remove('hidden');
 
         const tasks = await response.json();
         renderTasks(tasks);
@@ -144,17 +149,17 @@ async function loadCurrentUser() {
 }
 
 // Event Listeners
-if(addBtn) addBtn.addEventListener('click', addTask);
-if(taskInput) taskInput.addEventListener('keypress', (e) => {
+if (addBtn) addBtn.addEventListener('click', addTask);
+if (taskInput) taskInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') addTask();
 });
-if(logoutBtn) logoutBtn.addEventListener('click', logout);
+if (logoutBtn) logoutBtn.addEventListener('click', logout);
 
 navTasksBtn.addEventListener('click', () => {
     // Mostrar tareas, ocultar mensajes
     tasksSection.classList.remove('hidden');
     messagesSection.classList.add('hidden');
-    
+
     // Cambiar estilos de los botones (activo/inactivo)
     navTasksBtn.classList.add('bg-gray-200', 'text-gray-900');
     navTasksBtn.classList.remove('text-gray-600', 'hover:bg-gray-200');
@@ -166,13 +171,85 @@ navMessagesBtn.addEventListener('click', () => {
     // Mostrar mensajes, ocultar tareas
     messagesSection.classList.remove('hidden');
     tasksSection.classList.add('hidden');
-    
+
     // Cambiar estilos de los botones (activo/inactivo)
     navMessagesBtn.classList.add('bg-gray-200', 'text-gray-900');
     navMessagesBtn.classList.remove('text-gray-600', 'hover:bg-gray-200');
     navTasksBtn.classList.remove('bg-gray-200', 'text-gray-900');
-    navTasksBtn.classList.add('text-gray-600', 'hover:bg-gray-200');    
+    navTasksBtn.classList.add('text-gray-600', 'hover:bg-gray-200');
+
+    loadUsersForChat();
 });
+
+// Cargar lista de usuarios
+async function loadUsersForChat() {
+    try {
+        allUsers = await api.getUsers();
+        renderUsersList(allUsers);
+    } catch (error) {
+        console.error("Error cargando usuarios:", error);
+    }
+}
+
+// Lista de Usuarios
+function renderUsersList(usersToRender) {
+    usersList.innerHTML = '';
+
+    if (usersToRender.length === 0) {
+        usersList.innerHTML = `<p class="text-xs text-center text-gray-400 mt-4">No se encontraron usuarios.</p>`;
+        return;
+    }
+
+    usersToRender.forEach(user => {
+        const li = document.createElement('li');
+        li.className = `flex items-center gap-3 p-3 rounded-md cursor-pointer transition-colors ${currentSelectedUser?.id === user.id ? 'bg-gray-100' : 'hover:bg-gray-50'
+            }`;
+
+        const initial = user.username.charAt(0).toUpperCase();
+
+        li.innerHTML = `
+            <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold flex-shrink-0">
+                ${initial}
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-900 truncate">@${user.username}</p>
+                <p class="text-xs text-gray-500 truncate">Haz clic para chatear</p>
+            </div>
+        `;
+
+        li.addEventListener('click', () => {
+            openChatWith(user);
+        });
+
+        usersList.appendChild(li);
+    });
+}
+
+// Buscador
+userSearchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase().trim();
+
+    const filteredUsers = allUsers.filter(user =>
+        user.username.toLowerCase().includes(searchTerm)
+    );
+
+    renderUsersList(filteredUsers);
+});
+
+// Chat
+function openChatWith(user) {
+    currentSelectedUser = user;
+    renderUsersList(allUsers);
+
+    // Cambiamos la vista derecha
+    document.getElementById('chatEmptyState').classList.add('hidden');
+    document.getElementById('chatActiveState').classList.remove('hidden');
+    document.getElementById('chatHeaderName').textContent = `@${user.username}`;
+
+    // Aquí cargaremos los mensajes más adelante...
+    document.getElementById('chatWall').innerHTML = `<p class="text-center text-gray-400 text-sm mt-10">Cargando mensajes con ${user.username}...</p>`;
+}
+
 
 // Iniciar aplicación
 fetchTasks();
