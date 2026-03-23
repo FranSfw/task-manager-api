@@ -163,6 +163,9 @@ navTasksBtn.addEventListener('click', () => {
     tasksSection.classList.remove('hidden');
     messagesSection.classList.add('hidden');
 
+    // Detener el polling de mensajes
+    if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+
     // Cambiar estilos de los botones (activo/inactivo)
     navTasksBtn.classList.add('bg-gray-200', 'text-gray-900');
     navTasksBtn.classList.remove('text-gray-600', 'hover:bg-gray-200');
@@ -313,6 +316,8 @@ function timeAgo(dateString) {
 }
 
 // Chat
+let chatPollInterval = null;
+
 function openChatWith(user) {
     currentSelectedUser = user;
     renderActiveConversations();
@@ -324,6 +329,10 @@ function openChatWith(user) {
 
     document.getElementById('chatWall').innerHTML = `<p class="text-center text-gray-400 text-sm mt-10">Cargando mensajes con ${user.username}...</p>`;
     loadMessages();
+
+    // Polling: actualizar mensajes cada 5 segundos
+    if (chatPollInterval) clearInterval(chatPollInterval);
+    chatPollInterval = setInterval(loadMessages, 5000);
 }
 
 async function loadMessages() {
