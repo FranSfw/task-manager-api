@@ -64,12 +64,15 @@
                         <button id="tabUsersBtn" class="flex-1 py-1.5 text-sm font-medium text-gray-900 bg-gray-100 rounded-md transition-colors">Directos</button>
                         <button id="tabRequestsBtn" class="flex-1 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-md transition-colors">Solicitudes</button>
                     </div>
+                    <div class="px-2 pt-2">
+                        <input type="text" id="userSearchInput" placeholder="Buscar usuario..."
+                            class="w-full px-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-colors placeholder-gray-400">
+                    </div>
                     <ul id="usersList" class="flex-1 overflow-y-auto scrollbar-hide p-2 space-y-1">
                         </ul>
                 </div>
 
                 <div class="w-2/3 flex flex-col bg-gray-50 relative">
-                    
                     <div id="chatEmptyState" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 z-10">
                         <h3 class="text-xl font-medium text-gray-900">Tus Mensajes</h3>
                         <p class="text-gray-500 text-sm mt-1">Selecciona un usuario para iniciar una conversación.</p>
