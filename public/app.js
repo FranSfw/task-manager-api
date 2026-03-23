@@ -330,9 +330,32 @@ function openChatWith(user) {
     document.getElementById('chatWall').innerHTML = `<p class="text-center text-gray-400 text-sm mt-10">Cargando mensajes con ${user.username}...</p>`;
     loadMessages();
 
-    // Polling: actualizar mensajes cada 5 segundos
+    // Polling: verificar nuevos mensajes cada 5 segundos
     if (chatPollInterval) clearInterval(chatPollInterval);
-    chatPollInterval = setInterval(loadMessages, 5000);
+    chatPollInterval = setInterval(checkForNewMessages, 5000);
+}
+
+let lastMessageCount = 0;
+
+async function checkForNewMessages() {
+    if (!currentSelectedUser) return;
+
+    try {
+        const freshComments = await api.getComments();
+        const chatHistory = freshComments.filter(m =>
+            (m.sender_id === currentUserId && m.receiver_id === currentSelectedUser.id) ||
+            (m.sender_id === currentSelectedUser.id && m.receiver_id === currentUserId)
+        );
+
+        // Solo recargar si cambió la cantidad de mensajes
+        if (chatHistory.length !== lastMessageCount) {
+            allComments = freshComments;
+            renderChatWall(chatHistory);
+            renderActiveConversations();
+        }
+    } catch (error) {
+        console.error('Error al verificar mensajes:', error);
+    }
 }
 
 async function loadMessages() {
@@ -348,6 +371,7 @@ async function loadMessages() {
             (m.sender_id === currentSelectedUser.id && m.receiver_id === currentUserId)
         );
         
+        lastMessageCount = chatHistory.length; // Guardar el conteo actual
         renderChatWall(chatHistory);
         renderActiveConversations(); // Actualizar la lista lateral
     } catch (error) {
