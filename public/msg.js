@@ -57,10 +57,10 @@ async function handleSendMessage() {
     const text = messageInput.value.trim();
     
     // Requerimiento: Validar mensaje mínimo 5 caracteres
-    // if (text.length < 5) {
-    //     msgError.classList.remove('hidden');
-    //     return;
-    // }
+    if (text.length < 5) {
+        msgError.classList.remove('hidden');
+        return;
+    }
     msgError.classList.add('hidden');
     
     // Requerimiento: Agregar fecha automáticamente desde JS
