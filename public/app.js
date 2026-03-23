@@ -15,6 +15,7 @@ const usersList = document.getElementById('usersList');
 
 let allUsers = [];
 let currentSelectedUser = null;
+let currentUserId = null;
 
 // JWT
 function checkAuthError(response) {
@@ -141,6 +142,8 @@ async function loadCurrentUser() {
         const response = await fetch(`${API_URL}/me`, { credentials: 'include' });
         if (checkAuthError(response)) return;
         const user = await response.json();
+        currentUserId = user.id;
+
         const userDisplay = document.getElementById('currentUserDisplay');
         if (userDisplay) userDisplay.textContent = `@${user.username}`;
     } catch (error) {
@@ -236,6 +239,17 @@ userSearchInput.addEventListener('input', (e) => {
     renderUsersList(filteredUsers);
 });
 
+function timeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return "Hace un momento";
+    if (diffInSeconds < 3600) return `Hace ${Math.floor(diffInSeconds / 60)} minutos`;
+    if (diffInSeconds < 86400) return `Hace ${Math.floor(diffInSeconds / 3600)} horas`;
+    return `Hace ${Math.floor(diffInSeconds / 86400)} días`;
+}
+
 // Chat
 function openChatWith(user) {
     currentSelectedUser = user;
@@ -246,8 +260,61 @@ function openChatWith(user) {
     document.getElementById('chatActiveState').classList.remove('hidden');
     document.getElementById('chatHeaderName').textContent = `@${user.username}`;
 
-    // Aquí cargaremos los mensajes más adelante...
     document.getElementById('chatWall').innerHTML = `<p class="text-center text-gray-400 text-sm mt-10">Cargando mensajes con ${user.username}...</p>`;
+}
+
+async function loadMessages() {
+    const chatWall = document.getElementById('chatWall');
+    chatWall.innerHTML = `<p class="text-center text-gray-400 text-sm mt-10">Cargando...</p>`;
+    
+    try {
+        const allComments = await api.getComments();
+        
+        // Filtramos solo los mensajes entre tú y el usuario seleccionado
+        const chatHistory = allComments.filter(m => 
+            (m.sender_id === currentUserId && m.receiver_id === currentSelectedUser.id) ||
+            (m.sender_id === currentSelectedUser.id && m.receiver_id === currentUserId)
+        );
+        
+        renderChatWall(chatHistory);
+    } catch (error) {
+        chatWall.innerHTML = `<p class="text-center text-red-500 text-sm mt-10">Error de conexión.</p>`;
+    }
+}
+
+function renderChatWall(messages) {
+    const chatWall = document.getElementById('chatWall');
+    chatWall.innerHTML = '';
+    
+    // Requerimiento: Mensaje "No hay comentarios aún"
+    if (messages.length === 0) {
+        chatWall.innerHTML = `<p class="text-center text-gray-400 text-sm mt-10">No hay comentarios aún. ¡Inicia la conversación!</p>`;
+        return;
+    }
+    
+    // Requerimiento: Diferenciar visualmente cada comentario (Cards)
+    messages.forEach(msg => {
+        const isMe = msg.sender_id === currentUserId;
+        const div = document.createElement('div');
+        div.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
+        
+        div.innerHTML = `
+            <span class="text-xs text-gray-500 mb-1 mx-1">
+                ${isMe ? 'Tú' : '@' + msg.username} • ${timeAgo(msg.date)}
+            </span>
+            <div class="relative group max-w-[75%] px-4 py-2 rounded-2xl ${isMe ? 'bg-gray-900 text-white rounded-br-sm' : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm'}">
+                <p class="text-sm break-words">${msg.message}</p>
+                
+                <button onclick="deleteMessage(${msg.id})" class="absolute top-2 ${isMe ? '-left-16' : '-right-16'} text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-medium">
+                    Eliminar
+                </button>
+            </div>
+        `;
+        chatWall.appendChild(div);
+    });
+    
+    // Bajar el scroll automáticamente al último mensaje
+    chatWall.scrollTop = chatWall.scrollHeight;
 }
 
 
