@@ -261,6 +261,7 @@ function openChatWith(user) {
     document.getElementById('chatHeaderName').textContent = `@${user.username}`;
 
     document.getElementById('chatWall').innerHTML = `<p class="text-center text-gray-400 text-sm mt-10">Cargando mensajes con ${user.username}...</p>`;
+    loadMessages();
 }
 
 async function loadMessages() {
