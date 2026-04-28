@@ -66,6 +66,17 @@ const initDB = async () => {
         date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS photos (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        url TEXT NOT NULL,
+        likes INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
     console.log('Tablas verificadas en la base de datos.');
   } catch (error) {
     console.error('Error DB:', error);
@@ -204,6 +215,56 @@ app.put('/comments/:id/accept', authenticateToken, async (req, res) => {
     );
     res.status(200).json(result.rows[0]);
   } catch (error) { res.status(500).json({ error: 'Error al aceptar solicitud' }); }
+});
+
+// ENDPOINTS DE FOTOS
+
+// 1. GET /photos
+app.get('/photos', authenticateToken, async (req, res) => {
+  try {
+    const query = `
+      SELECT p.id, p.url, p.title, p.likes, p.created_at, u.username, p.user_id 
+      FROM photos p 
+      JOIN users u ON p.user_id = u.id 
+      ORDER BY p.created_at DESC
+    `;
+    const result = await pool.query(query);
+    res.status(200).json(result.rows);
+  } catch (error) { res.status(500).json({ error: 'Error al obtener fotos' }); }
+});
+
+// 2. POST /photos
+app.post('/photos', authenticateToken, async (req, res) => {
+  const { url, title } = req.body;
+  if (!url || !title) return res.status(400).json({ error: 'Faltan datos' });
+  try {
+    const result = await pool.query(
+      'INSERT INTO photos (user_id, url, title) VALUES ($1, $2, $3) RETURNING *',
+      [req.user.id, url, title]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) { res.status(500).json({ error: 'Error al subir foto' }); }
+});
+
+// 3. DELETE /photos/:id
+app.delete('/photos/:id', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query('DELETE FROM photos WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'No autorizada o no encontrada' });
+    res.status(204).send();
+  } catch (error) { res.status(500).json({ error: 'Error' }); }
+});
+
+// 4. PUT /photos/:id/like
+app.put('/photos/:id/like', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'UPDATE photos SET likes = likes + 1 WHERE id = $1 RETURNING *',
+      [req.params.id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Foto no encontrada' });
+    res.status(200).json(result.rows[0]);
+  } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
 app.listen(PORT, () => console.log(`API corriendo en puerto ${PORT}`));
