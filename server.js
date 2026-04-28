@@ -243,7 +243,10 @@ app.post('/photos', authenticateToken, async (req, res) => {
       [req.user.id, url, title]
     );
     res.status(201).json(result.rows[0]);
-  } catch (error) { res.status(500).json({ error: 'Error al subir foto' }); }
+  } catch (error) {
+    console.error('Error al subir foto:', error.message);
+    res.status(500).json({ error: 'Error al subir foto' });
+  }
 });
 
 // 3. DELETE /photos/:id
