@@ -77,6 +77,14 @@ const initDB = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS photo_likes (
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        photo_id INTEGER REFERENCES photos(id) ON DELETE CASCADE,
+        PRIMARY KEY (user_id, photo_id)
+      );
+    `);
     console.log('Tablas verificadas en la base de datos.');
   } catch (error) {
     console.error('Error DB:', error);
@@ -223,12 +231,13 @@ app.put('/comments/:id/accept', authenticateToken, async (req, res) => {
 app.get('/photos', authenticateToken, async (req, res) => {
   try {
     const query = `
-      SELECT p.id, p.url, p.title, p.likes, p.created_at, u.username, p.user_id 
+      SELECT p.id, p.url, p.title, p.likes, p.created_at, u.username, p.user_id,
+        EXISTS(SELECT 1 FROM photo_likes pl WHERE pl.photo_id = p.id AND pl.user_id = $1) AS user_liked
       FROM photos p 
       JOIN users u ON p.user_id = u.id 
       ORDER BY p.created_at DESC
     `;
-    const result = await pool.query(query);
+    const result = await pool.query(query, [req.user.id]);
     res.status(200).json(result.rows);
   } catch (error) { res.status(500).json({ error: 'Error al obtener fotos' }); }
 });
@@ -258,15 +267,29 @@ app.delete('/photos/:id', authenticateToken, async (req, res) => {
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-// 4. PUT /photos/:id/like
+// 4. PUT /photos/:id/like (toggle)
 app.put('/photos/:id/like', authenticateToken, async (req, res) => {
+  const photoId = req.params.id;
+  const userId = req.user.id;
   try {
-    const result = await pool.query(
-      'UPDATE photos SET likes = likes + 1 WHERE id = $1 RETURNING *',
-      [req.params.id]
+    const likeCheck = await pool.query(
+      'SELECT 1 FROM photo_likes WHERE user_id = $1 AND photo_id = $2',
+      [userId, photoId]
     );
+
+    let result;
+    if (likeCheck.rowCount > 0) {
+      // Ya likeó → quitar like
+      await pool.query('DELETE FROM photo_likes WHERE user_id = $1 AND photo_id = $2', [userId, photoId]);
+      result = await pool.query('UPDATE photos SET likes = GREATEST(likes - 1, 0) WHERE id = $1 RETURNING *', [photoId]);
+    } else {
+      // No ha likeado → agregar like
+      await pool.query('INSERT INTO photo_likes (user_id, photo_id) VALUES ($1, $2)', [userId, photoId]);
+      result = await pool.query('UPDATE photos SET likes = likes + 1 WHERE id = $1 RETURNING *', [photoId]);
+    }
+
     if (result.rowCount === 0) return res.status(404).json({ error: 'Foto no encontrada' });
-    res.status(200).json(result.rows[0]);
+    res.status(200).json({ ...result.rows[0], user_liked: likeCheck.rowCount === 0 });
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 

@@ -110,9 +110,9 @@ function renderPhotos(photos) {
                     <h4 class="text-gray-900 font-semibold text-sm truncate">${photo.title}</h4>
                 </div>
                 
-                <button onclick="likePhoto(${photo.id})" class="flex items-center gap-1.5 text-gray-400 hover:text-pink-500 transition-colors group/like flex-shrink-0">
-                    <svg class="w-5 h-5 transition-transform group-hover/like:scale-110 ${photo.likes > 0 ? 'text-pink-500' : ''}" fill="currentColor" stroke="none" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>
-                    <span class="text-sm font-bold ${photo.likes > 0 ? 'text-pink-500' : ''}">${photo.likes}</span>
+                <button onclick="likePhoto(${photo.id})" class="flex items-center gap-1.5 ${photo.user_liked ? 'text-pink-500' : 'text-gray-400 hover:text-pink-500'} transition-colors group/like flex-shrink-0">
+                    <svg class="w-5 h-5 transition-transform group-hover/like:scale-110" fill="${photo.user_liked ? 'currentColor' : 'none'}" stroke="${photo.user_liked ? 'none' : 'currentColor'}" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>
+                    <span class="text-sm font-bold">${photo.likes}</span>
                 </button>
             </div>
         `;
