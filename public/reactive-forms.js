@@ -192,7 +192,7 @@ export const Validators = {
     required: (control) => control.value ? null : { required: true },
     email: (control) => {
         if (!control.value) return null;
-        const regex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return regex.test(control.value) ? null : { email: true };
     },
     min: (minVal) => (control) => {
