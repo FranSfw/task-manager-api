@@ -94,13 +94,23 @@ initDB();
 
 // ENDPOINTS DE AUTENTICACIÓN
 
+app.post('/check-email', async (req, res) => {
+  const { email } = req.body;
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE username = $1', [email]);
+    res.json({ exists: result.rowCount > 0 });
+  } catch (error) { res.status(500).json({ error: 'Error' }); }
+});
+
 // 1. POST /register
 app.post('/register', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, email } = req.body;
+  // If email is provided (from the new form), use it as username
+  const finalUsername = email || username;
   try {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    const result = await pool.query('INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username', [username, hashedPassword]);
+    const result = await pool.query('INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username', [finalUsername, hashedPassword]);
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '2h' });
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 2 * 60 * 60 * 1000 });

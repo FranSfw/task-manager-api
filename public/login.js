@@ -46,5 +46,4 @@ async function handleAuth(endpoint) {
     }
 }
 
-loginBtn.addEventListener('click', () => handleAuth('/login'));
-registerBtn.addEventListener('click', () => handleAuth('/register'));
+loginBtn.addEventListener('click', () => handleAuth('/login'));
