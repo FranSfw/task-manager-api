@@ -11,6 +11,21 @@ const passwordMatchValidator = (group) => {
 };
 
 // Validación asíncrona
+const checkUsernameAsyncValidator = async (control) => {
+    if (!control.value) return null;
+    try {
+        const res = await fetch('/check-username', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: control.value })
+        });
+        const data = await res.json();
+        return data.exists ? { usernameExists: true } : null;
+    } catch(e) {
+        return null;
+    }
+};
+
 const checkEmailAsyncValidator = async (control) => {
     if (!control.value) return null;
     try {
@@ -28,6 +43,7 @@ const checkEmailAsyncValidator = async (control) => {
 
 // Configuración de ReactiveForms
 const registerForm = new FormGroup({
+    username: new FormControl('', [Validators.required], [checkUsernameAsyncValidator]),
     nombre: new FormControl('', [Validators.required]),
     email: new FormControl('', [Validators.required, Validators.email], [checkEmailAsyncValidator]),
     password: new FormControl('', [Validators.required]),
@@ -41,6 +57,7 @@ registerForm.updateValueAndValidity(); // Evaluate initial state
 
 // DOM Elements
 const inputs = {
+    username: document.getElementById('usernameInput'),
     nombre: document.getElementById('nombreInput'),
     email: document.getElementById('emailInput'),
     password: document.getElementById('passwordInput'),
@@ -49,6 +66,7 @@ const inputs = {
 };
 
 const errors = {
+    username: document.getElementById('usernameError'),
     nombre: document.getElementById('nombreError'),
     email: document.getElementById('emailError'),
     password: document.getElementById('passwordError'),
@@ -59,6 +77,7 @@ const errors = {
 
 const submitBtn = document.getElementById('submitBtn');
 const emailPending = document.getElementById('emailPending');
+const usernamePending = document.getElementById('usernamePending');
 const hobbiesList = document.getElementById('hobbiesList');
 const addHobbieBtn = document.getElementById('addHobbieBtn');
 
@@ -66,6 +85,18 @@ const addHobbieBtn = document.getElementById('addHobbieBtn');
 const updateUI = () => {
     // Check submit disabled state
     submitBtn.disabled = registerForm.invalid || registerForm.pending;
+
+    // Username
+    const usernameCtrl = registerForm.get('username');
+    usernamePending.classList.toggle('hidden', !usernameCtrl.pending);
+    
+    if ((usernameCtrl.touched || usernameCtrl.dirty) && usernameCtrl.invalid && !usernameCtrl.pending) {
+        if (usernameCtrl.errors.required) errors.username.textContent = 'El usuario es obligatorio.';
+        else if (usernameCtrl.errors.usernameExists) errors.username.textContent = 'Este usuario ya está registrado.';
+        errors.username.classList.remove('hidden');
+    } else {
+        errors.username.classList.add('hidden');
+    }
 
     // Nombre
     const nombreCtrl = registerForm.get('nombre');
@@ -206,7 +237,8 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                username: registerForm.value.nombre, // We use email as the actual unique username in DB
+                username: registerForm.value.username,
+                nombre: registerForm.value.nombre,
                 email: registerForm.value.email,
                 password: registerForm.value.password,
                 edad: registerForm.value.edad

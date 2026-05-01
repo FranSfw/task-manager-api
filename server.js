@@ -45,6 +45,9 @@ const initDB = async () => {
         username VARCHAR(50) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL
       );
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS nombre VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS edad INTEGER;
     `);
 
     await pool.query(`
@@ -94,23 +97,32 @@ initDB();
 
 // ENDPOINTS DE AUTENTICACIÓN
 
+app.post('/check-username', async (req, res) => {
+  const { username } = req.body;
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+    res.json({ exists: result.rowCount > 0 });
+  } catch (error) { res.status(500).json({ error: 'Error' }); }
+});
+
 app.post('/check-email', async (req, res) => {
   const { email } = req.body;
   try {
-    const result = await pool.query('SELECT * FROM users WHERE username = $1', [email]);
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     res.json({ exists: result.rowCount > 0 });
   } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
 // 1. POST /register
 app.post('/register', async (req, res) => {
-  const { username, password, email } = req.body;
-  // If email is provided (from the new form), use it as username
-  const finalUsername = email || username;
+  const { username, password, email, nombre, edad } = req.body;
   try {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    const result = await pool.query('INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username', [finalUsername, hashedPassword]);
+    const result = await pool.query(
+      'INSERT INTO users (username, password, email, nombre, edad) VALUES ($1, $2, $3, $4, $5) RETURNING id, username',
+      [username, hashedPassword, email, nombre, edad]
+    );
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '2h' });
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 2 * 60 * 60 * 1000 });

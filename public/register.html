@@ -14,6 +14,14 @@
         <h1 class="text-3xl font-bold mb-6 text-gray-900 tracking-tight text-center">Crear Cuenta</h1>
         
         <form id="registerForm" class="flex flex-col gap-4">
+            <!-- Username -->
+            <div>
+                <input type="text" id="usernameInput" placeholder="Nombre de usuario"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-gray-900 transition-colors">
+                <p id="usernameError" class="text-red-500 text-xs mt-1 hidden"></p>
+                <p id="usernamePending" class="text-blue-500 text-xs mt-1 hidden">Verificando usuario...</p>
+            </div>
+
             <!-- Nombre -->
             <div>
                 <input type="text" id="nombreInput" placeholder="Nombre completo"
