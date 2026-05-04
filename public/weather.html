@@ -90,9 +90,14 @@
                                 <div id="wIcon" class="text-6xl">☀️</div>
                             </div>
 
-                            <div class="flex items-baseline gap-2 mb-2">
-                                <span id="wTemp" class="text-7xl font-bold text-gray-900 tracking-tighter">--</span>
-                                <span class="text-3xl text-gray-400 font-medium">°C</span>
+                            <div class="flex items-center gap-4 mb-2">
+                                <div class="flex items-baseline gap-2">
+                                    <span id="wTemp" class="text-7xl font-bold text-gray-900 tracking-tighter">--</span>
+                                    <span id="wUnitLabel" class="text-3xl text-gray-400 font-medium">°C</span>
+                                </div>
+                                <button id="unitToggleBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-md text-xs font-bold transition-colors">
+                                    Cambiar a °F
+                                </button>
                             </div>
                             <p id="wDesc" class="text-gray-600 text-lg capitalize">--</p>
 

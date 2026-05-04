@@ -44,6 +44,14 @@ const pipes = {
     // Aunque OpenMeteo ya da Celsius, cumplimos con el requerimiento de conversión
     kelvinToCelsius: (k) => (k - 273.15).toFixed(1),
     
+    // Conversión Celsius a Fahrenheit
+    cToF: (c) => (c * 9/5) + 32,
+
+    formatTemp: (temp, unit) => {
+        const value = unit === 'F' ? pipes.cToF(temp) : temp;
+        return Math.round(value);
+    },
+    
     weatherCodeToIcon: (code) => {
         const map = {
             0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️',
@@ -101,6 +109,9 @@ class WeatherApp {
     constructor() {
         this.service = new WeatherService();
         this.cacheKey = 'weather_recent_searches';
+        this.unit = 'C'; // 'C' or 'F'
+        this.currentCityData = null;
+        this.currentWeatherData = null;
         
         // UI Elements
         this.cityInput = document.getElementById('cityInput');
@@ -113,6 +124,11 @@ class WeatherApp {
         this.recentSection = document.getElementById('recentSection');
         this.recentTags = document.getElementById('recentTags');
         
+        // Temperature Elements
+        this.wTemp = document.getElementById('wTemp');
+        this.wUnitLabel = document.getElementById('wUnitLabel');
+        this.unitToggleBtn = document.getElementById('unitToggleBtn');
+        
         this.init();
     }
 
@@ -123,6 +139,10 @@ class WeatherApp {
         this.searchBtn.addEventListener('click', () => this.handleSearch());
         this.cityInput.addEventListener('keypress', (e) => e.key === 'Enter' && this.handleSearch());
         this.cityInput.addEventListener('input', (e) => this.handleAutocomplete(e.target.value));
+        
+        if (this.unitToggleBtn) {
+            this.unitToggleBtn.addEventListener('click', () => this.toggleUnit());
+        }
         
         document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
 
@@ -159,6 +179,16 @@ class WeatherApp {
             window.location.replace('login.html');
         } catch (error) {
             console.error('Error al cerrar sesión', error);
+        }
+    }
+
+    toggleUnit() {
+        this.unit = this.unit === 'C' ? 'F' : 'C';
+        this.unitToggleBtn.textContent = `Cambiar a °${this.unit === 'C' ? 'F' : 'C'}`;
+        this.wUnitLabel.textContent = `°${this.unit}`;
+        
+        if (this.currentCityData && this.currentWeatherData) {
+            this.renderWeather(this.currentCityData, this.currentWeatherData);
         }
     }
 
@@ -227,6 +257,8 @@ class WeatherApp {
         
         this.service.getWeather(city.latitude, city.longitude).subscribe({
             next: (data) => {
+                this.currentCityData = city;
+                this.currentWeatherData = data;
                 this.renderWeather(city, data);
                 this.saveToCache(city);
                 this.setLoading(false);
@@ -245,11 +277,11 @@ class WeatherApp {
         // Current Card
         document.getElementById('wCity').textContent = city.name;
         document.getElementById('wCountry').textContent = `${city.admin1 ? city.admin1 + ', ' : ''}${city.country}`;
-        document.getElementById('wTemp').textContent = Math.round(current.temperature_2m);
+        this.wTemp.textContent = pipes.formatTemp(current.temperature_2m, this.unit);
         document.getElementById('wIcon').textContent = pipes.weatherCodeToIcon(current.weather_code);
         document.getElementById('wDesc').textContent = pipes.weatherCodeToDesc(current.weather_code);
         
-        document.getElementById('wFeelsLike').textContent = `${Math.round(current.apparent_temperature)}°`;
+        document.getElementById('wFeelsLike').textContent = `${pipes.formatTemp(current.apparent_temperature, this.unit)}°`;
         document.getElementById('wHumidity').textContent = `${current.relative_humidity_2m}%`;
         document.getElementById('wWind').textContent = `${current.wind_speed_10m} km/h`;
         document.getElementById('wRain').textContent = `${current.precipitation} mm`;
@@ -266,8 +298,8 @@ class WeatherApp {
                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">${pipes.formatDay(daily.time[i])}</p>
                 <div class="text-3xl mb-2">${pipes.weatherCodeToIcon(daily.weather_code[i])}</div>
                 <div class="flex flex-col">
-                    <span class="text-base font-bold text-gray-900">${Math.round(daily.temperature_2m_max[i])}°</span>
-                    <span class="text-xs text-gray-400">${Math.round(daily.temperature_2m_min[i])}°</span>
+                    <span class="text-base font-bold text-gray-900">${pipes.formatTemp(daily.temperature_2m_max[i], this.unit)}°</span>
+                    <span class="text-xs text-gray-400">${pipes.formatTemp(daily.temperature_2m_min[i], this.unit)}°</span>
                 </div>
                 ${daily.precipitation_sum[i] > 0 ? `<p class="text-[9px] text-blue-500 mt-2 font-medium">💧 ${daily.precipitation_sum[i]}mm</p>` : ''}
             `;
