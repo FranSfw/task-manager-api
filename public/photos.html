@@ -31,22 +31,25 @@
     <div id="appContainer" class="hidden flex h-screen w-full">
         
         <!-- Sidebar -->
-        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0 z-10">
+        <aside class="w-64 bg-gray-50 border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
             <div class="p-6">
                 <h2 class="text-xl font-bold tracking-tight text-gray-900 mb-8">Mi Espacio</h2>
                 <nav class="space-y-2">
-                    <a href="index.html" class="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-100 rounded-md font-medium transition-colors text-sm text-gray-600 text-left">
-                        Mis Tareas & Mensajes
+                    <a href="index.html" class="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-200 rounded-md font-medium transition-colors text-sm text-gray-600 text-left">
+                        Mis Tareas
                     </a>
-                    <a href="photos.html" class="w-full flex items-center gap-3 px-3 py-2 bg-gray-900 text-white shadow-sm rounded-md font-medium transition-colors text-sm text-left">
+                    <a href="index.html" class="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-200 rounded-md font-medium transition-colors text-sm text-gray-600 text-left">
+                        Mensajes
+                    </a>
+                    <a href="photos.html" class="w-full flex items-center gap-3 px-3 py-2 bg-gray-200 rounded-md font-medium transition-colors text-sm text-gray-900 text-left">
                         Galería de Fotos
                     </a>
-                    <a href="weather.html" class="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-100 rounded-md font-medium transition-colors text-sm text-gray-600 text-left">
+                    <a href="weather.html" class="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-200 rounded-md font-medium transition-colors text-sm text-gray-600 text-left">
                         Clima
                     </a>
                 </nav>
             </div>
-            <div class="p-6 border-t border-gray-100">
+            <div class="p-6 border-t border-gray-200">
                 <p id="currentUserDisplay" class="text-sm font-medium text-gray-900 mb-2 truncate">@usuario</p>
                 <button id="logoutBtn" class="text-xs font-medium text-red-500 hover:text-red-700 transition-colors">
                     Cerrar Sesión
