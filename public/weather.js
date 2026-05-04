@@ -1,13 +1,3 @@
-/**
- * CONCEPTOS APLICADOS:
- * 1. HttpClientModule -> Simulado con WeatherHttpClient
- * 2. Servicios -> WeatherService
- * 3. Observable/Subscribe -> Simulado con clase SimpleObservable
- * 4. Interceptors -> LoggingInterceptor
- * 5. Pipe personalizado -> kelvinToCelsius (aunque OpenMeteo es Celsius, implementamos la lógica)
- * 6. Cache simple -> LocalStorage
- */
-
 // --- 1. MOCK OBSERVABLE PATTERN ---
 class SimpleObservable {
     constructor(executionFunction) {
@@ -127,25 +117,14 @@ class WeatherApp {
     }
 
     init() {
-        // Auth check (matching project style)
-        const user = JSON.parse(localStorage.getItem('currentUser'));
-        if (!user) {
-            window.location.href = 'login.html';
-            return;
-        }
-        document.getElementById('currentUserDisplay').textContent = `@${user.username}`;
-        document.getElementById('appContainer').classList.remove('hidden');
-        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+        this.checkAuth();
 
         // Event Listeners
         this.searchBtn.addEventListener('click', () => this.handleSearch());
         this.cityInput.addEventListener('keypress', (e) => e.key === 'Enter' && this.handleSearch());
         this.cityInput.addEventListener('input', (e) => this.handleAutocomplete(e.target.value));
         
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('currentUser');
-            window.location.href = 'login.html';
-        });
+        document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
 
         // Close autocomplete on click outside
         document.addEventListener('click', (e) => {
@@ -155,6 +134,32 @@ class WeatherApp {
         });
 
         this.renderRecent();
+    }
+
+    async checkAuth() {
+        try {
+            const response = await fetch('/me', { credentials: 'include' });
+            if (response.status === 401 || response.status === 403) {
+                window.location.replace('login.html');
+                return;
+            }
+            const user = await response.json();
+            document.getElementById('currentUserDisplay').textContent = `@${user.username}`;
+            document.getElementById('appContainer').classList.remove('hidden');
+            document.getElementById('currentDate').textContent = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+        } catch (error) {
+            console.error('Error de autenticación:', error);
+            window.location.replace('login.html');
+        }
+    }
+
+    async logout() {
+        try {
+            await fetch('/logout', { method: 'POST', credentials: 'include' });
+            window.location.replace('login.html');
+        } catch (error) {
+            console.error('Error al cerrar sesión', error);
+        }
     }
 
     handleAutocomplete(query) {
