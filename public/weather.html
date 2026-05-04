@@ -4,211 +4,136 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clima - Francisco Perez</title>
-    <meta name="description" content="Widget del clima con búsqueda de ciudades, temperatura actual y pronóstico extendido de 5 días.">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style> body { font-family: 'Inter', sans-serif; } </style>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'weather-bg': '#0f1117',
-                        'weather-glass': 'rgba(255, 255, 255, 0.05)',
-                        'weather-glass-hover': 'rgba(255, 255, 255, 0.08)',
-                        'weather-border': 'rgba(255, 255, 255, 0.1)',
-                        'weather-primary': '#4f8ef7',
-                        'weather-secondary': '#a78bfa',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style> 
+        body { font-family: 'Inter', sans-serif; } 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-10px) scale(1.05); }
-        }
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        
-        @keyframes spin-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .animate-spin-slow { animation: spin-slow 8s linear infinite; }
     </style>
 </head>
-<body class="bg-weather-bg text-gray-100 font-sans min-h-screen overflow-hidden selection:bg-weather-primary/30">
+<body class="bg-white text-gray-800 antialiased min-h-screen overflow-hidden">
     
-    <!-- Decorative Background Blobs -->
-    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div class="absolute -top-40 -left-40 w-96 h-96 bg-weather-primary/20 rounded-full blur-[100px] animate-pulse"></div>
-        <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-weather-secondary/20 rounded-full blur-[100px] animate-pulse" style="animation-delay: 2s;"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px]"></div>
-    </div>
-
-    <div id="appContainer" class="hidden flex h-screen w-full relative z-10">
+    <div id="appContainer" class="hidden flex h-screen w-full">
+        
         <!-- Sidebar -->
-        <aside class="w-64 bg-black/20 backdrop-blur-xl border-r border-weather-border flex flex-col justify-between p-8 flex-shrink-0">
-            <div>
-                <h2 class="text-2xl font-extrabold tracking-tighter bg-gradient-to-r from-weather-primary to-weather-secondary bg-clip-text text-transparent mb-10">
-                    Mi Espacio
-                </h2>
+        <aside class="w-64 bg-gray-50 border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
+            <div class="p-6">
+                <h2 class="text-xl font-bold tracking-tight text-gray-900 mb-8">Mi Espacio</h2>
                 <nav class="space-y-2">
-                    <a href="index.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-weather-glass-hover hover:text-white transition-all group">
-                        <svg class="w-5 h-5 group-hover:text-weather-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                        <span class="font-medium text-sm">Mis Tareas</span>
+                    <a href="index.html" class="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-200 rounded-md font-medium transition-colors text-sm text-gray-600 text-left">
+                        Mis Tareas & Mensajes
                     </a>
-                    <a href="photos.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-weather-glass-hover hover:text-white transition-all group">
-                        <svg class="w-5 h-5 group-hover:text-weather-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        <span class="font-medium text-sm">Galería</span>
+                    <a href="photos.html" class="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-200 rounded-md font-medium transition-colors text-sm text-gray-600 text-left">
+                        Galería de Fotos
                     </a>
-                    <a href="weather.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-weather-primary to-weather-secondary text-white shadow-lg shadow-weather-primary/20 transition-all">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
-                        <span class="font-medium text-sm">Clima</span>
+                    <a href="weather.html" class="w-full flex items-center gap-3 px-3 py-2 bg-gray-200 rounded-md font-medium transition-colors text-sm text-gray-900 text-left">
+                        Clima
                     </a>
                 </nav>
             </div>
-            <div class="pt-6 border-t border-weather-border">
-                <p id="currentUserDisplay" class="text-sm font-semibold text-white mb-2 truncate">@usuario</p>
-                <button id="logoutBtn" class="text-xs font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest">
+            <div class="p-6 border-t border-gray-200">
+                <p id="currentUserDisplay" class="text-sm font-medium text-gray-900 mb-2 truncate">@usuario</p>
+                <button id="logoutBtn" class="text-xs font-medium text-red-500 hover:text-red-700 transition-colors">
                     Cerrar Sesión
                 </button>
             </div>
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 flex flex-col h-screen overflow-y-auto scrollbar-hide">
-            <div class="max-w-5xl mx-auto w-full p-8 md:p-12">
-                <header class="mb-12">
-                    <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-3">
-                        <span class="bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">Centro de</span>
-                        <span class="bg-gradient-to-r from-weather-primary to-weather-secondary bg-clip-text text-transparent">Meteorología</span>
-                    </h1>
-                    <p class="text-gray-400 text-lg">Consulta el estado del tiempo en cualquier rincón del mundo.</p>
-                </header>
-
-                <!-- Search Section -->
-                <div class="relative mb-10 group">
-                    <div class="flex items-center bg-weather-glass backdrop-blur-2xl border border-weather-border rounded-2xl p-2 focus-within:border-weather-primary/50 focus-within:ring-4 focus-within:ring-weather-primary/10 transition-all duration-300">
-                        <div class="pl-4 text-gray-500">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        </div>
-                        <input type="text" id="cityInput" placeholder="Busca una ciudad (ej: Medellín, Tokyo, Paris...)" 
-                            class="flex-1 bg-transparent border-none outline-none px-4 py-3 text-lg font-medium placeholder-gray-600" autocomplete="off">
-                        <button id="searchBtn" class="bg-gradient-to-r from-weather-primary to-weather-secondary hover:opacity-90 text-white font-bold px-8 py-3 rounded-xl transition-all active:scale-95">
-                            Buscar
-                        </button>
-                    </div>
-                    <!-- Autocomplete Suggestions -->
-                    <ul id="autocompleteList" class="hidden absolute top-full left-0 right-0 mt-3 bg-[#161b22] border border-weather-border rounded-2xl overflow-hidden shadow-2xl z-50">
-                        <!-- Items will be injected here -->
-                    </ul>
-                </div>
-
-                <!-- Error Message -->
-                <div id="errorMsg" class="hidden items-center gap-4 bg-red-500/10 border border-red-500/20 text-red-400 p-5 rounded-2xl mb-8 animate-in fade-in slide-in-from-top-4 duration-300">
-                    <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <p id="errorText" class="font-medium"></p>
-                </div>
-
-                <!-- Loading State -->
-                <div id="loadingSpinner" class="hidden flex-col items-center justify-center py-20 gap-6">
-                    <div class="relative">
-                        <div class="w-16 h-16 border-4 border-weather-primary/20 border-t-weather-primary rounded-full animate-spin"></div>
-                        <div class="absolute inset-0 w-16 h-16 border-4 border-transparent border-b-weather-secondary rounded-full animate-spin-slow"></div>
-                    </div>
-                    <p class="text-gray-400 font-medium animate-pulse">Sincronizando con satélites...</p>
-                </div>
-
-                <!-- Weather Content -->
-                <div id="weatherContent" class="hidden space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <main class="flex-1 flex flex-col h-screen relative overflow-y-auto scrollbar-hide">
+            <section class="w-full h-full flex justify-center py-10 px-8">
+                <div class="w-full max-w-3xl">
                     
-                    <!-- Current Weather Card -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="lg:col-span-2 bg-weather-glass backdrop-blur-xl border border-weather-border rounded-[32px] p-8 md:p-12 overflow-hidden relative group">
-                            <div class="relative z-10">
-                                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-                                    <div>
-                                        <h2 id="wCity" class="text-4xl md:text-5xl font-black mb-1">Cargando...</h2>
-                                        <p id="wCountry" class="text-weather-primary font-bold uppercase tracking-widest text-sm">PAÍS</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p id="currentDate" class="text-gray-400 font-medium"></p>
-                                    </div>
-                                </div>
+                    <!-- Header -->
+                    <div class="mb-10 border-b border-gray-100 pb-6">
+                        <h1 class="text-4xl font-bold text-gray-900 tracking-tight">Clima</h1>
+                        <p id="currentDate" class="text-gray-500 text-sm mt-2"></p>
+                    </div>
 
-                                <div class="flex items-center gap-10">
-                                    <div class="flex items-start">
-                                        <span id="wTemp" class="text-8xl md:text-9xl font-thin tracking-tighter bg-gradient-to-br from-white to-gray-500 bg-clip-text text-transparent">--</span>
-                                        <span class="text-4xl md:text-5xl font-light text-gray-500 mt-6 md:mt-10">°C</span>
-                                    </div>
-                                    <div id="wIcon" class="text-7xl md:text-9xl animate-float">☀️</div>
+                    <!-- Search Input (Notion-like) -->
+                    <div class="relative mb-10">
+                        <div class="flex items-center gap-3 border-b border-gray-200 focus-within:border-gray-900 transition-colors pb-2">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            <input type="text" id="cityInput" placeholder="Busca una ciudad..." 
+                                class="flex-1 bg-transparent border-none outline-none text-lg placeholder-gray-400">
+                            <button id="searchBtn" class="bg-gray-900 text-white px-4 py-1.5 rounded-md font-medium hover:bg-gray-700 transition-colors text-sm">
+                                Buscar
+                            </button>
+                        </div>
+                        <!-- Autocomplete -->
+                        <ul id="autocompleteList" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-30 max-h-60 overflow-y-auto scrollbar-hide">
+                        </ul>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="loadingSpinner" class="hidden py-20 text-center">
+                        <p class="text-gray-400 italic">Consultando satélites...</p>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="errorMsg" class="hidden mb-6 p-4 bg-red-50 border border-red-100 rounded-md">
+                        <p id="errorText" class="text-sm text-red-600 font-medium"></p>
+                    </div>
+
+                    <!-- Weather Content -->
+                    <div id="weatherContent" class="hidden space-y-8 animate-in fade-in duration-500">
+                        
+                        <!-- Current Weather Card -->
+                        <div class="bg-white border border-gray-100 rounded-xl p-8 shadow-sm">
+                            <div class="flex justify-between items-start mb-8">
+                                <div>
+                                    <h2 id="wCity" class="text-3xl font-bold text-gray-900 leading-tight">--</h2>
+                                    <p id="wCountry" class="text-gray-500 text-sm uppercase tracking-wide font-semibold mt-1">--</p>
                                 </div>
-                                <p id="wDesc" class="text-xl md:text-2xl text-gray-400 capitalize mt-4 font-medium">Despejado</p>
+                                <div id="wIcon" class="text-6xl">☀️</div>
                             </div>
-                            
-                            <!-- Background Accent -->
-                            <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-weather-primary/10 rounded-full blur-3xl group-hover:bg-weather-primary/20 transition-colors duration-700"></div>
+
+                            <div class="flex items-baseline gap-2 mb-2">
+                                <span id="wTemp" class="text-7xl font-bold text-gray-900 tracking-tighter">--</span>
+                                <span class="text-3xl text-gray-400 font-medium">°C</span>
+                            </div>
+                            <p id="wDesc" class="text-gray-600 text-lg capitalize">--</p>
+
+                            <!-- Grid stats -->
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10 pt-8 border-t border-gray-50">
+                                <div>
+                                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Sensación</p>
+                                    <p id="wFeelsLike" class="text-lg font-semibold text-gray-900">--</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Humedad</p>
+                                    <p id="wHumidity" class="text-lg font-semibold text-gray-900">--</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Viento</p>
+                                    <p id="wWind" class="text-lg font-semibold text-gray-900">--</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Lluvia</p>
+                                    <p id="wRain" class="text-lg font-semibold text-gray-900">--</p>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Mini Stats -->
-                        <div class="grid grid-cols-2 lg:grid-cols-1 gap-4">
-                            <div class="bg-weather-glass border border-weather-border rounded-3xl p-6 flex flex-col justify-between">
-                                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Sensación</p>
-                                <div class="flex items-end justify-between">
-                                    <span id="wFeelsLike" class="text-3xl font-bold">--°</span>
-                                    <span class="text-2xl opacity-50">🌡️</span>
-                                </div>
-                            </div>
-                            <div class="bg-weather-glass border border-weather-border rounded-3xl p-6 flex flex-col justify-between">
-                                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Humedad</p>
-                                <div class="flex items-end justify-between">
-                                    <span id="wHumidity" class="text-3xl font-bold">--%</span>
-                                    <span class="text-2xl opacity-50">💧</span>
-                                </div>
-                            </div>
-                            <div class="bg-weather-glass border border-weather-border rounded-3xl p-6 flex flex-col justify-between">
-                                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Viento</p>
-                                <div class="flex items-end justify-between">
-                                    <span id="wWind" class="text-3xl font-bold">-- km/h</span>
-                                    <span class="text-2xl opacity-50">💨</span>
-                                </div>
-                            </div>
-                            <div class="bg-weather-glass border border-weather-border rounded-3xl p-6 flex flex-col justify-between">
-                                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Precipitación</p>
-                                <div class="flex items-end justify-between">
-                                    <span id="wRain" class="text-3xl font-bold">-- mm</span>
-                                    <span class="text-2xl opacity-50">🌧️</span>
-                                </div>
+                        <!-- Forecast -->
+                        <div>
+                            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Pronóstico 5 Días</h3>
+                            <div id="forecastGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                                <!-- Forecast cards injected here -->
                             </div>
                         </div>
                     </div>
 
-                    <!-- Forecast Section -->
-                    <section>
-                        <h3 class="text-xl font-bold mb-6 flex items-center gap-3 text-gray-300">
-                            <span class="w-8 h-[2px] bg-weather-primary"></span>
-                            Pronóstico Extendido
-                        </h3>
-                        <div id="forecastGrid" class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                            <!-- Forecast cards will be injected here -->
+                    <!-- Recent Searches -->
+                    <div id="recentSection" class="mt-12 hidden">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Historial</p>
+                        <div id="recentTags" class="flex flex-wrap gap-2">
                         </div>
-                    </section>
-                </div>
-
-                <!-- Recent Searches -->
-                <div id="recentSection" class="mt-12 hidden animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
-                    <p class="text-gray-500 text-xs font-bold uppercase tracking-[0.2em] mb-4">Historial Reciente</p>
-                    <div id="recentTags" class="flex flex-wrap gap-3">
-                        <!-- Tags will be injected here -->
                     </div>
-                </div>
 
-            </div>
+                </div>
+            </section>
         </main>
     </div>
 

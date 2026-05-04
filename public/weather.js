@@ -174,14 +174,14 @@ class WeatherApp {
                 if (data.results && data.results.length > 0) {
                     data.results.forEach(city => {
                         const li = document.createElement('li');
-                        li.className = 'px-6 py-4 hover:bg-weather-glass-hover cursor-pointer border-b border-weather-border last:border-none transition-colors';
+                        li.className = 'px-4 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-none transition-colors text-sm';
                         li.innerHTML = `
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <span class="font-bold text-white">${city.name}</span>
-                                    <span class="text-gray-500 text-xs ml-2">${city.admin1 || ''}, ${city.country}</span>
+                                    <span class="font-medium text-gray-900">${city.name}</span>
+                                    <span class="text-gray-400 text-xs ml-2">${city.admin1 || ''}, ${city.country}</span>
                                 </div>
-                                <span class="text-[10px] bg-weather-primary/20 text-weather-primary px-2 py-1 rounded-full font-black uppercase">${city.country_code}</span>
+                                <span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-bold uppercase">${city.country_code}</span>
                             </div>
                         `;
                         li.addEventListener('click', () => {
@@ -261,15 +261,15 @@ class WeatherApp {
         // Skip today (index 0) and take next 5 days
         for (let i = 1; i <= 5; i++) {
             const card = document.createElement('div');
-            card.className = 'bg-weather-glass border border-weather-border rounded-3xl p-6 text-center hover:bg-weather-glass-hover transition-all group';
+            card.className = 'bg-white border border-gray-100 rounded-lg p-4 text-center hover:bg-gray-50 transition-colors shadow-sm';
             card.innerHTML = `
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">${pipes.formatDay(daily.time[i])}</p>
-                <div class="text-4xl mb-3 group-hover:scale-110 transition-transform">${pipes.weatherCodeToIcon(daily.weather_code[i])}</div>
-                <div class="space-y-1">
-                    <p class="text-xl font-bold text-white">${Math.round(daily.temperature_2m_max[i])}°</p>
-                    <p class="text-sm text-gray-500 font-medium">${Math.round(daily.temperature_2m_min[i])}°</p>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">${pipes.formatDay(daily.time[i])}</p>
+                <div class="text-3xl mb-2">${pipes.weatherCodeToIcon(daily.weather_code[i])}</div>
+                <div class="flex flex-col">
+                    <span class="text-base font-bold text-gray-900">${Math.round(daily.temperature_2m_max[i])}°</span>
+                    <span class="text-xs text-gray-400">${Math.round(daily.temperature_2m_min[i])}°</span>
                 </div>
-                ${daily.precipitation_sum[i] > 0 ? `<p class="text-[10px] text-blue-400 mt-3 font-bold">💧 ${daily.precipitation_sum[i]}mm</p>` : ''}
+                ${daily.precipitation_sum[i] > 0 ? `<p class="text-[9px] text-blue-500 mt-2 font-medium">💧 ${daily.precipitation_sum[i]}mm</p>` : ''}
             `;
             grid.appendChild(card);
         }
@@ -299,7 +299,7 @@ class WeatherApp {
         this.recentTags.innerHTML = '';
         recent.forEach(city => {
             const tag = document.createElement('button');
-            tag.className = 'bg-weather-glass border border-weather-border hover:border-weather-primary/40 px-4 py-2 rounded-full text-xs font-semibold text-gray-400 hover:text-white transition-all flex items-center gap-2';
+            tag.className = 'bg-gray-50 border border-gray-200 hover:border-gray-900 px-3 py-1 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900 transition-all flex items-center gap-2';
             tag.innerHTML = `<span>📍</span> ${city.name}`;
             tag.addEventListener('click', () => {
                 this.cityInput.value = city.name;
