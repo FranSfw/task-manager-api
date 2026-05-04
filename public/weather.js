@@ -1,4 +1,3 @@
-// --- 1. MOCK OBSERVABLE PATTERN ---
 class SimpleObservable {
     constructor(executionFunction) {
         this.executionFunction = executionFunction;
@@ -13,7 +12,6 @@ class SimpleObservable {
     }
 }
 
-// --- 2. INTERCEPTOR & HTTP CLIENT ---
 class LoggingInterceptor {
     static intercept(url, options) {
         console.log(`[HTTP Request] ${new Date().toISOString()} - URL: ${url}`);
@@ -39,7 +37,6 @@ class WeatherHttpClient {
     }
 }
 
-// --- 3. CUSTOM PIPES (Formatters) ---
 const pipes = {
     // Aunque OpenMeteo ya da Celsius, cumplimos con el requerimiento de conversión
     kelvinToCelsius: (k) => (k - 273.15).toFixed(1),
@@ -85,7 +82,6 @@ const pipes = {
     }
 };
 
-// --- 4. WEATHER SERVICE ---
 class WeatherService {
     constructor() {
         this.http = new WeatherHttpClient();
@@ -104,12 +100,11 @@ class WeatherService {
     }
 }
 
-// --- 5. APP LOGIC (UI CONTROLLER) ---
 class WeatherApp {
     constructor() {
         this.service = new WeatherService();
         this.cacheKey = 'weather_recent_searches';
-        this.unit = 'C'; // 'C' or 'F'
+        this.unit = 'C';
         this.currentCityData = null;
         this.currentWeatherData = null;
         
